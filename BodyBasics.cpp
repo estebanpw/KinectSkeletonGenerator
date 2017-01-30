@@ -8,11 +8,14 @@
 #include <strsafe.h>
 #include "resource.h"
 #include "BodyBasics.h"
+#include <Windows.h>
+#include <Commdlg.h>
 
 static const float c_JointThickness = 3.0f;
 static const float c_TrackedBoneThickness = 6.0f;
 static const float c_InferredBoneThickness = 1.0f;
 static const float c_HandSize = 30.0f;
+
 
 /// <summary>
 /// Entry point for the application
@@ -31,6 +34,8 @@ int APIENTRY wWinMain(
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+	
 
     CBodyBasics application(lpCmdLine);
     application.Run(hInstance, nShowCmd);
@@ -60,7 +65,6 @@ CBodyBasics::CBodyBasics(LPWSTR write_path) :
     m_pBrushHandOpen(NULL),
     m_pBrushHandLasso(NULL)
 {
-	this->limblengths = new LimbLengths(write_path);
     LARGE_INTEGER qpf = {0};
     if (QueryPerformanceFrequency(&qpf))
     {
@@ -128,8 +132,40 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
         (DLGPROC)CBodyBasics::MessageRouter, 
         reinterpret_cast<LPARAM>(this));
 
-    // Show window
-    ShowWindow(hWndApp, nCmdShow);
+
+	
+
+	OPENFILENAME ofn;
+	wchar_t szFile[1000];
+
+	// open a file name
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = L"CSV\0*.csv\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST;
+	GetOpenFileName(&ofn);
+
+	
+	//Ask for the output files
+	char path_convert[MAX_PATH];
+	sprintf(path_convert, "%ws", ofn.lpstrFile);
+	if (strstr(path_convert, ".csv") == NULL) {
+		strcat(path_convert, ".csv");
+	}
+
+	this->limblengths = new LimbLengths(path_convert);
+
+	// Show window
+	ShowWindow(hWndApp, nCmdShow);
+	
 
 	
     // Main message loop

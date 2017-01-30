@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-
+#include <time.h>
 
 class LimbLengths
 {
@@ -14,9 +14,11 @@ private:
 	HandState right_h;
 	uint64_t n_joints;
 	FILE * write_file;
+	FILE * write_file_raw;
+	clock_t init_time;
 	bool record;
 public:
-	LimbLengths(LPCWSTR write_path);
+	LimbLengths(char * write_path);
 	void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lfh, HandState rgh);
 	~LimbLengths();
 private:
