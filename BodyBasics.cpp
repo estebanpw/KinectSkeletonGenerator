@@ -8,14 +8,19 @@
 #include <strsafe.h>
 #include "resource.h"
 #include "BodyBasics.h"
-#include <Windows.h>
-#include <Commdlg.h>
 
 static const float c_JointThickness = 3.0f;
 static const float c_TrackedBoneThickness = 6.0f;
 static const float c_InferredBoneThickness = 1.0f;
 static const float c_HandSize = 30.0f;
 
+// Window handle variables
+HWND conf_button;
+OPENFILENAME ofn;
+bool _HAVE_FILENAME = false;
+char path_convert[MAX_PATH];
+
+LRESULT CALLBACK window_process_config(HWND handleforwindow, UINT msg, WPARAM wParam, LPARAM lParam);
 
 /// <summary>
 /// Entry point for the application
@@ -124,44 +129,65 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
         return 0;
     }
 
-    // Create main application window
-    HWND hWndApp = CreateDialogParamW(
-        NULL,
-        MAKEINTRESOURCE(IDD_APP),
-        NULL,
-        (DLGPROC)CBodyBasics::MessageRouter, 
-        reinterpret_cast<LPARAM>(this));
+    
 
 
 	
-
-	OPENFILENAME ofn;
-	wchar_t szFile[1000];
-
-	// open a file name
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = NULL;
-	ofn.lpstrFile = szFile;
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = L"CSV\0*.csv\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST;
-	GetOpenFileName(&ofn);
-
 	
-	//Ask for the output files
-	char path_convert[MAX_PATH];
-	sprintf(path_convert, "%ws", ofn.lpstrFile);
-	if (strstr(path_convert, ".csv") == NULL) {
-		strcat(path_convert, ".csv");
+
+	// Struct for configuration window class registration
+	WNDCLASS wc2;
+	wc2.style = 0;
+	wc2.lpfnWndProc = window_process_config;
+	wc2.cbClsExtra = 0;
+	wc2.cbWndExtra = 0;
+	wc2.hInstance = hInstance;
+	wc2.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wc2.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc2.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc2.lpszMenuName = NULL;
+	wc2.lpszClassName = L"CLASS1";
+
+	// Register class
+	if (!RegisterClass(&wc2)){
+		MessageBox(NULL, L"Window Registration Failed", L"Error", MB_ICONEXCLAMATION | MB_OK);
+		return 0;
 	}
+	
+	// Create window that will have the configuration components
+	HWND window_confg = CreateWindowEx(WS_EX_CLIENTEDGE, L"CLASS1", L"Configuration panel",
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT, 250, 120,
+		NULL, NULL, hInstance, NULL);
+	
+	// BUtton to open file dialog
+	conf_button = CreateWindow(
+		L"BUTTON",  // Predefined class; Unicode assumed 
+		L"Open file",      // Button text 
+		WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+		120,         // x position 
+		0,         // y position 
+		100,        // Button width
+		50,        // Button height
+		window_confg,     // Parent window
+		NULL,       // No menu.
+		hInstance,
+		NULL);      // Pointer not needed.
 
-	this->limblengths = new LimbLengths(path_convert);
+	// Add textbox to configuration window
+	HWND htextbox = CreateWindow(L"edit", L"", WS_BORDER | ES_MULTILINE | WS_CHILD | WS_VISIBLE, 10, 0,
+		100, 50, window_confg, NULL, hInstance, NULL);
+
+	ShowWindow(window_confg, nCmdShow);
+
+
+	// Create main application window
+	HWND hWndApp = CreateDialogParamW(
+		NULL,
+		MAKEINTRESOURCE(IDD_APP),
+		NULL,
+		(DLGPROC)CBodyBasics::MessageRouter,
+		reinterpret_cast<LPARAM>(this));
 
 	// Show window
 	ShowWindow(hWndApp, nCmdShow);
@@ -172,6 +198,9 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
     while (WM_QUIT != msg.message)
     {
         Update();
+
+		
+		// To add stopping control
 
         while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -194,40 +223,40 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
 /// </summary>
 void CBodyBasics::Update()
 {
-    if (!m_pBodyFrameReader)
-    {
-        return;
-    }
+	if (!m_pBodyFrameReader)
+	{
+		return;
+	}
 
-    IBodyFrame* pBodyFrame = NULL;
+	IBodyFrame* pBodyFrame = NULL;
 
-    HRESULT hr = m_pBodyFrameReader->AcquireLatestFrame(&pBodyFrame);
+	HRESULT hr = m_pBodyFrameReader->AcquireLatestFrame(&pBodyFrame);
 
-    if (SUCCEEDED(hr))
-    {
-        INT64 nTime = 0;
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
 
-        hr = pBodyFrame->get_RelativeTime(&nTime);
+		hr = pBodyFrame->get_RelativeTime(&nTime);
 
-        IBody* ppBodies[BODY_COUNT] = {0};
+		IBody* ppBodies[BODY_COUNT] = { 0 };
 
-        if (SUCCEEDED(hr))
-        {
-            hr = pBodyFrame->GetAndRefreshBodyData(_countof(ppBodies), ppBodies);
-        }
+		if (SUCCEEDED(hr))
+		{
+			hr = pBodyFrame->GetAndRefreshBodyData(_countof(ppBodies), ppBodies);
+		}
 
-        if (SUCCEEDED(hr))
-        {
-            ProcessBody(nTime, BODY_COUNT, ppBodies);
-        }
+		if (SUCCEEDED(hr))
+		{
+			ProcessBody(nTime, BODY_COUNT, ppBodies);
+		}
 
-        for (int i = 0; i < _countof(ppBodies); ++i)
-        {
-            SafeRelease(ppBodies[i]);
-        }
-    }
+		for (int i = 0; i < _countof(ppBodies); ++i)
+		{
+			SafeRelease(ppBodies[i]);
+		}
+	}
 
-    SafeRelease(pBodyFrame);
+	SafeRelease(pBodyFrame);
 }
 
 /// <summary>
@@ -240,25 +269,26 @@ void CBodyBasics::Update()
 /// <returns>result of message processing</returns>
 LRESULT CALLBACK CBodyBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    CBodyBasics* pThis = NULL;
-    
-    if (WM_INITDIALOG == uMsg)
-    {
-        pThis = reinterpret_cast<CBodyBasics*>(lParam);
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
-    }
-    else
-    {
-        pThis = reinterpret_cast<CBodyBasics*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
-    }
+	CBodyBasics* pThis = NULL;
 
-    if (pThis)
-    {
-        return pThis->DlgProc(hWnd, uMsg, wParam, lParam);
-    }
+	if (WM_INITDIALOG == uMsg)
+	{
+		pThis = reinterpret_cast<CBodyBasics*>(lParam);
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
+	}
+	else
+	{
+		pThis = reinterpret_cast<CBodyBasics*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	}
 
-    return 0;
+	if (pThis)
+	{
+		return pThis->DlgProc(hWnd, uMsg, wParam, lParam);
+	}
+
+	return 0;
 }
+
 
 /// <summary>
 /// Handle windows messages for the class instance
@@ -270,23 +300,27 @@ LRESULT CALLBACK CBodyBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam,
 /// <returns>result of message processing</returns>
 LRESULT CALLBACK CBodyBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    UNREFERENCED_PARAMETER(wParam);
-    UNREFERENCED_PARAMETER(lParam);
+	UNREFERENCED_PARAMETER(wParam);
+	UNREFERENCED_PARAMETER(lParam);
 
-    switch (message)
-    {
-        case WM_INITDIALOG:
-        {
-            // Bind application window handle
-            m_hWnd = hWnd;
+	
 
-            // Init Direct2D
-            D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+	{
+		// Bind application window handle
+		m_hWnd = hWnd;
 
-            // Get and initialize the default Kinect sensor
-            InitializeDefaultSensor();
-        }
-        break;
+		// Init Direct2D
+		D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+
+		// Get and initialize the default Kinect sensor
+		InitializeDefaultSensor();
+	}
+	break;
+
+	
 
         // If the titlebar X is clicked, destroy app
         case WM_CLOSE:
@@ -301,6 +335,11 @@ LRESULT CALLBACK CBodyBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
     return FALSE;
 }
+
+
+
+
+
 
 /// <summary>
 /// Initializes the default Kinect sensor
@@ -394,8 +433,14 @@ void CBodyBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** ppBodies)
                         if (SUCCEEDED(hr))
                         {
 							//Pass joints to limbs manager
-														
-							this->limblengths->record_skeleton(joints, (uint64_t) _countof(joints), leftHandState, rightHandState);
+							if (_HAVE_FILENAME == true) {
+								this->limblengths = new LimbLengths(path_convert);
+								_HAVE_FILENAME = false;
+							}
+							if (this->limblengths != NULL) {
+								this->limblengths->record_skeleton(joints, (uint64_t)_countof(joints), leftHandState, rightHandState);
+							}
+							
 
                             for (int j = 0; j < _countof(joints); ++j)
                             {
@@ -676,4 +721,53 @@ void CBodyBasics::DrawHand(HandState handState, const D2D1_POINT_2F& handPositio
             m_pRenderTarget->FillEllipse(ellipse, m_pBrushHandLasso);
             break;
     }
+}
+
+
+
+LRESULT CALLBACK window_process_config(HWND handleforwindow, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg){
+		case WM_DESTROY: {
+			return 0;
+		}
+		break;
+		case WM_COMMAND:
+		{
+			
+			if (((HWND)lParam == conf_button)) {
+				//button was pressed
+				// Structure for open file name dialog
+				
+				wchar_t szFile[1000];
+
+				// open a file name
+				ZeroMemory(&ofn, sizeof(ofn));
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = NULL;
+				ofn.lpstrFile = szFile;
+				ofn.lpstrFile[0] = '\0';
+				ofn.nMaxFile = sizeof(szFile);
+				ofn.lpstrFilter = L"CSV\0*.csv\0";
+				ofn.nFilterIndex = 1;
+				ofn.lpstrFileTitle = NULL;
+				ofn.nMaxFileTitle = 0;
+				ofn.lpstrInitialDir = NULL;
+				ofn.Flags = OFN_PATHMUSTEXIST;
+				GetOpenFileName(&ofn);
+
+				//Ask for the output files
+				
+				sprintf(path_convert, "%ws", ofn.lpstrFile);
+				if (strstr(path_convert, ".csv") == NULL) {
+					strcat(path_convert, ".csv");
+				}
+				_HAVE_FILENAME = true;
+			}
+
+		}
+		break;
+	}
+
+	return DefWindowProc(handleforwindow, msg, wParam, lParam);
 }

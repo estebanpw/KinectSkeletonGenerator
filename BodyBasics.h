@@ -8,12 +8,14 @@
 
 #include "resource.h"
 #include "LimbLengths.h"
+#include <Windows.h>
+#include <Commdlg.h>
 
 class CBodyBasics
 {
     static const int        cDepthWidth  = 512;
     static const int        cDepthHeight = 424;
-	LimbLengths * limblengths;
+	LimbLengths * limblengths = NULL;
 
 public:
     /// <summary>
@@ -151,5 +153,8 @@ private:
     /// <param name="joint0">one joint of the bone to draw</param>
     /// <param name="joint1">other joint of the bone to draw</param>
     void                    DrawBone(const Joint* pJoints, const D2D1_POINT_2F* pJointPoints, JointType joint0, JointType joint1);
+
+	bool get_stop_key() { unsigned char array[256]; GetKeyboardState(array); return (array[VK_ESCAPE] > 0);
+	}
 };
 
