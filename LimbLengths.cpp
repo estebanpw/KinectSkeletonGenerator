@@ -2,9 +2,9 @@
 
 
 
-LimbLengths::LimbLengths(char * write_path)
+LimbLengths::LimbLengths(char * write_path, float time_to_record)
 {
-	
+	this->max_record_time = time_to_record;
 	this->write_file = fopen(write_path, "wt");
 	strcat(write_path, ".raw.csv");
 	this->write_file_raw = fopen(write_path, "wt");
@@ -24,28 +24,32 @@ void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lf
 	}
 	
 	if (this->record) {
-		uint64_t i;
-		fprintf(this->write_file, "%f;", (clock() - init_time) / (float) CLOCKS_PER_SEC);
-		for (i = 0; i < n_joints; i++) {
-			
 
-			if (limbs[i].TrackingState != TrackingState_Inferred) {
-				fprintf(this->write_file, "0.0;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
+		if (this->max_record_time == 0 || this->max_record_time > ((clock() - init_time) / (float)CLOCKS_PER_SEC)) {
+			uint64_t i;
+			fprintf(this->write_file, "%f;", (clock() - init_time) / (float)CLOCKS_PER_SEC);
+			for (i = 0; i < n_joints; i++) {
+
+
+				if (limbs[i].TrackingState != TrackingState_Inferred) {
+					fprintf(this->write_file, "0;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
+				}
+				else {
+					fprintf(this->write_file, "1;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
+				}
+
+				fprintf(this->write_file_raw, "%f;%f;%f;", limbs[i].Position.X, limbs[i].Position.Y, limbs[i].Position.Z);
+			}
+			if (limbs[0].TrackingState != TrackingState_Inferred) {
+				fprintf(this->write_file, "0;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
 			}
 			else {
-				fprintf(this->write_file, "1;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
+				fprintf(this->write_file, "1;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
 			}
-			
-			fprintf(this->write_file_raw, "%f;%f;%f;", limbs[i].Position.X, limbs[i].Position.Y, limbs[i].Position.Z);
-		}
-		if (limbs[0].TrackingState != TrackingState_Inferred) {
-			fprintf(this->write_file, "0.0;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
-		}
-		else {
-			fprintf(this->write_file, "1;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
+
+			fprintf(this->write_file_raw, "\n");
 		}
 		
-		fprintf(this->write_file_raw, "\n");
 	}
 	
 }

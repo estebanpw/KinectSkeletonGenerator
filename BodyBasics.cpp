@@ -14,11 +14,16 @@ static const float c_TrackedBoneThickness = 6.0f;
 static const float c_InferredBoneThickness = 1.0f;
 static const float c_HandSize = 30.0f;
 
+// One define
+#define MAX_BUFFER_WCHAR 1000
+
 // Window handle variables
 HWND conf_button;
+HWND htextbox;
 OPENFILENAME ofn;
 bool _HAVE_FILENAME = false;
 char path_convert[MAX_PATH];
+float time_to_record_converted;
 
 LRESULT CALLBACK window_process_config(HWND handleforwindow, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -174,11 +179,19 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
 		hInstance,
 		NULL);      // Pointer not needed.
 
-	// Add textbox to configuration window
-	HWND htextbox = CreateWindow(L"edit", L"", WS_BORDER | ES_MULTILINE | WS_CHILD | WS_VISIBLE, 10, 0,
-		100, 50, window_confg, NULL, hInstance, NULL);
+	// Add textbox and textlabel to configuration window
+	HWND htextlabel = CreateWindow(L"static", L"ST_U",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+		10, 10, 100, 20,
+		window_confg, (HMENU)(501),
+		hInstance, NULL);
 
-	ShowWindow(window_confg, nCmdShow);
+	SetWindowText(htextlabel, L"Delta(T):");
+
+	htextbox = CreateWindow(L"edit", L"", WS_BORDER | ES_MULTILINE | WS_CHILD | WS_VISIBLE, 10, 30,
+		100, 20, window_confg, NULL, hInstance, NULL);
+
+	SetWindowText(htextbox, L"");
 
 
 	// Create main application window
@@ -191,7 +204,7 @@ int CBodyBasics::Run(HINSTANCE hInstance, int nCmdShow)
 
 	// Show window
 	ShowWindow(hWndApp, nCmdShow);
-	
+	ShowWindow(window_confg, nCmdShow);
 
 	
     // Main message loop
@@ -434,7 +447,7 @@ void CBodyBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** ppBodies)
                         {
 							//Pass joints to limbs manager
 							if (_HAVE_FILENAME == true) {
-								this->limblengths = new LimbLengths(path_convert);
+								this->limblengths = new LimbLengths(path_convert, time_to_record_converted);
 								_HAVE_FILENAME = false;
 							}
 							if (this->limblengths != NULL) {
@@ -739,30 +752,43 @@ LRESULT CALLBACK window_process_config(HWND handleforwindow, UINT msg, WPARAM wP
 				//button was pressed
 				// Structure for open file name dialog
 				
-				wchar_t szFile[1000];
-
-				// open a file name
-				ZeroMemory(&ofn, sizeof(ofn));
-				ofn.lStructSize = sizeof(ofn);
-				ofn.hwndOwner = NULL;
-				ofn.lpstrFile = szFile;
-				ofn.lpstrFile[0] = '\0';
-				ofn.nMaxFile = sizeof(szFile);
-				ofn.lpstrFilter = L"CSV\0*.csv\0";
-				ofn.nFilterIndex = 1;
-				ofn.lpstrFileTitle = NULL;
-				ofn.nMaxFileTitle = 0;
-				ofn.lpstrInitialDir = NULL;
-				ofn.Flags = OFN_PATHMUSTEXIST;
-				GetOpenFileName(&ofn);
-
-				//Ask for the output files
+				//Check that the time was set
+				wchar_t time_to_record[MAX_BUFFER_WCHAR];
+				GetWindowText(htextbox, time_to_record, MAX_BUFFER_WCHAR);
 				
-				sprintf(path_convert, "%ws", ofn.lpstrFile);
-				if (strstr(path_convert, ".csv") == NULL) {
-					strcat(path_convert, ".csv");
+				time_to_record_converted = _wtof(time_to_record);
+
+				if (time_to_record_converted >= 0 && wcslen(time_to_record) > 0) {
+					wchar_t szFile[MAX_BUFFER_WCHAR];
+
+					// open a file name
+					ZeroMemory(&ofn, sizeof(ofn));
+					ofn.lStructSize = sizeof(ofn);
+					ofn.hwndOwner = NULL;
+					ofn.lpstrFile = szFile;
+					ofn.lpstrFile[0] = '\0';
+					ofn.nMaxFile = sizeof(szFile);
+					ofn.lpstrFilter = L"CSV\0*.csv\0";
+					ofn.nFilterIndex = 1;
+					ofn.lpstrFileTitle = NULL;
+					ofn.nMaxFileTitle = 0;
+					ofn.lpstrInitialDir = NULL;
+					ofn.Flags = OFN_PATHMUSTEXIST;
+					GetOpenFileName(&ofn);
+
+					//Ask for the output files
+
+					sprintf(path_convert, "%ws", ofn.lpstrFile);
+					if (strstr(path_convert, ".csv") == NULL) {
+						strcat(path_convert, ".csv");
+					}
+					_HAVE_FILENAME = true;
 				}
-				_HAVE_FILENAME = true;
+				else {
+					MessageBox(NULL, L"Please insert a time limit. Use 0 for unlimited recording.", NULL, MB_ICONWARNING);
+				}
+
+				
 			}
 
 		}
