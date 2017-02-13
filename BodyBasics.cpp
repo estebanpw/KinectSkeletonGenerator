@@ -447,7 +447,7 @@ void CBodyBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** ppBodies)
                         {
 							//Pass joints to limbs manager
 							if (_HAVE_FILENAME == true) {
-								this->limblengths = new LimbLengths(path_convert, time_to_record_converted);
+								this->limblengths = new LimbLengths(path_convert, time_to_record_converted, m_hWnd);
 								_HAVE_FILENAME = false;
 							}
 							if (this->limblengths != NULL) {
