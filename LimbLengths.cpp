@@ -20,7 +20,7 @@ void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lf
 		this->record = true;
 		this->init_time = clock();
 		fprintf(this->write_file, "tiempo;esq0Inf;esq0X;esq0Y;esq0Z;esq1Inf;esq1X;esq1Y;esq1Z;esq2Inf;esq2X;esq2Y;esq2Z;esq3Inf;esq3X;esq3Y;esq3Z;esq4Inf;esq4X;esq4Y;esq4Z;esq5Inf;esq5X;esq5Y;esq5Z;esq6Inf;esq6X;esq6Y;esq6Z;esq7Inf;esq7X;esq7Y;esq7Z;esq8Inf;esq8X;esq8Y;esq8Z;esq9Inf;esq9X;esq9Y;esq9Z;esq10Inf;esq10X;esq10Y;esq10Z;esq11Inf;esq11X;esq11Y;esq11Z;esq12Inf;esq12X;esq12Y;esq12Z;esq13Inf;esq13X;esq13Y;esq13Z;esq14Inf;esq14X;esq14Y;esq14Z;esq15Inf;esq15X;esq15Y;esq15Z;esq16Inf;esq16X;esq16Y;esq16Z;esq17Inf;esq17X;esq17Y;esq17Z;esq18Inf;esq18X;esq18Y;esq18Z;esq19Inf;esq19X;esq19Y;esq19Z;esq20Inf;esq20X;esq20Y;esq20Z;esq21Inf;esq21X;esq21Y;esq21Z;esq22Inf;esq22X;esq22Y;esq22Z;esq23Inf;esq23X;esq23Y;esq23Z;esq24Inf;esq24X;esq24Y;esq24Z;esqRefInf;esqRefX;esqRefY;esqRefZ\n");
-		fprintf(this->write_file_raw, "esq0X;esq0Y;esq0Z;esq1X;esq1Y;esq1Z;esq2X;esq2Y;esq2Z;esq3X;esq3Y;esq3Z;esq4X;esq4Y;esq4Z;esq5X;esq5Y;esq5Z;esq6X;esq6Y;esq6Z;esq7X;esq7Y;esq7Z;esq8X;esq8Y;esq8Z;esq9X;esq9Y;esq9Z;esq10X;esq10Y;esq10Z;esq11X;esq11Y;esq11Z;esq12X;esq12Y;esq12Z;esq13X;esq13Y;esq13Z;esq14X;esq14Y;esq14Z;esq15X;esq15Y;esq15Z;esq16X;esq16Y;esq16Z;esq17X;esq17Y;esq17Z;esq18X;esq18Y;esq18Z;esq19X;esq19Y;esq19Z;esq20X;esq20Y;esq20Z;esq21X;esq21Y;esq21Z;esq22X;esq22Y;esq22Z;esq23X;esq23Y;esq23Z;esq24X;esq24Y;esq24Z;esqRefX;esqRefY;esqRefZ\n");
+		fprintf(this->write_file_raw, "tiempo;esq0Inf;esq0X;esq0Y;esq0Z;esq1Inf;esq1X;esq1Y;esq1Z;esq2Inf;esq2X;esq2Y;esq2Z;esq3Inf;esq3X;esq3Y;esq3Z;esq4Inf;esq4X;esq4Y;esq4Z;esq5Inf;esq5X;esq5Y;esq5Z;esq6Inf;esq6X;esq6Y;esq6Z;esq7Inf;esq7X;esq7Y;esq7Z;esq8Inf;esq8X;esq8Y;esq8Z;esq9Inf;esq9X;esq9Y;esq9Z;esq10Inf;esq10X;esq10Y;esq10Z;esq11Inf;esq11X;esq11Y;esq11Z;esq12Inf;esq12X;esq12Y;esq12Z;esq13Inf;esq13X;esq13Y;esq13Z;esq14Inf;esq14X;esq14Y;esq14Z;esq15Inf;esq15X;esq15Y;esq15Z;esq16Inf;esq16X;esq16Y;esq16Z;esq17Inf;esq17X;esq17Y;esq17Z;esq18Inf;esq18X;esq18Y;esq18Z;esq19Inf;esq19X;esq19Y;esq19Z;esq20Inf;esq20X;esq20Y;esq20Z;esq21Inf;esq21X;esq21Y;esq21Z;esq22Inf;esq22X;esq22Y;esq22Z;esq23Inf;esq23X;esq23Y;esq23Z;esq24Inf;esq24X;esq24Y;esq24Z;esqRefInf;esqRefX;esqRefY;esqRefZ\n\n");
 		
 	}
 	
@@ -31,24 +31,17 @@ void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lf
 			fprintf(this->write_file, "%f;", (clock() - init_time) / (float)CLOCKS_PER_SEC);
 			for (i = 0; i < n_joints; i++) {
 
-
-				if (limbs[i].TrackingState != TrackingState_Inferred) {
-					fprintf(this->write_file, "0;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
-				}
-				else {
-					fprintf(this->write_file, "1;%f;%f;%f;", limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
-				}
-
-				fprintf(this->write_file_raw, "%f;%f;%f;", limbs[i].Position.X, limbs[i].Position.Y, limbs[i].Position.Z);
-			}
-			if (limbs[0].TrackingState != TrackingState_Inferred) {
-				fprintf(this->write_file, "0;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
-			}
-			else {
-				fprintf(this->write_file, "1;%f;%f;%f\n", limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
+				if (limbs[i].TrackingState != TrackingState_Inferred) this->condition = 0; else this->condition = 1;
+				
+				fprintf(this->write_file, "%d;%f;%f;%f;", this->condition, limbs[i].Position.X - limbs[0].Position.X, limbs[i].Position.Y - limbs[0].Position.Y, limbs[i].Position.Z - limbs[0].Position.Z);
+				fprintf(this->write_file_raw, "%d;%f;%f;%f;", this->condition, limbs[i].Position.X, limbs[i].Position.Y, limbs[i].Position.Z);
 			}
 
-			fprintf(this->write_file_raw, "\n");
+
+
+			if (limbs[0].TrackingState != TrackingState_Inferred) this->condition = 0; else this->condition = 1;
+			fprintf(this->write_file, "%d;%f;%f;%f\n", this->condition, limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
+			fprintf(this->write_file_raw, "%d;%f;%f;%f\n", this->condition, limbs[0].Position.X, limbs[0].Position.Y, limbs[0].Position.Z);
 		}
 		
 	}
