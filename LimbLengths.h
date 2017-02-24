@@ -18,8 +18,10 @@ private:
 	clock_t init_time;
 	bool record;
 	float max_record_time;
+	HWND window_owner;
+	int condition;
 public:
-	LimbLengths(char * write_path, float time_to_record);
+	LimbLengths(char * write_path, float time_to_record, HWND window_owner);
 	void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lfh, HandState rgh);
 	~LimbLengths();
 private:
