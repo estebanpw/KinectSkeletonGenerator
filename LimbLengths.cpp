@@ -46,7 +46,7 @@ void LimbLengths::record_skeleton(Joint * limbs, uint64_t n_joints, HandState lf
 		
 	}
 
-	if (this->max_record_time != 0 && this->max_record_time > ((clock() - init_time) / (float)CLOCKS_PER_SEC)) {
+	if (this->max_record_time != 0 && this->max_record_time < ((clock() - init_time) / (float)CLOCKS_PER_SEC)) {
 		//Closing time
 		SendMessage(this->window_owner, WM_CLOSE, NULL, NULL);
 	}
